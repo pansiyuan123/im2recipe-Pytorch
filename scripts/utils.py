@@ -1,5 +1,5 @@
 from collections import defaultdict
-import HTMLParser
+from html.parser import HTMLParser
 import copy
 import os
 import random
@@ -25,19 +25,29 @@ class Layer(object):
             return json.load(f_layer)
 
     @staticmethod
-    def merge(layers, ROOT,copy_base=False, **kwargs):
+    def merge(layers, ROOT, copy_base=False, **kwargs):
+        print ("ROOT:",ROOT)
+        print ("kwargs:",**kwargs)
         layers = [l if isinstance(l, list) else Layer.load(l, ROOT, **kwargs) for l in layers]
         base = copy.deepcopy(layers[0]) if copy_base else layers[0]
-        entries_by_id = {entry['id']: entry for entry in base}
+        #entries_by_id = {entry['id']: entry for entry in base}
+        entries_by_id = {}
+        for entry in base:
+            entries_by_id[entry['id']] = entry
+            print (entry['id'])
+
         for layer in layers[1:]:
             for entry in layer:
                 base_entry = entries_by_id.get(entry['id'])
                 if not base_entry:
+                    print ("caonima")
+                    print (base_entry)
                     continue
                 base_entry.update(entry)
         return base
 
-REPLACEMENTS = {
+REPLACEMENTS = \
+    {
     u'\x91':"'", u'\x92':"'", u'\x93':'"', u'\x94':'"', u'\xa9':'',
     u'\xba': ' degrees ', u'\xbc':' 1/4', u'\xbd':' 1/2', u'\xbe':' 3/4',
     u'\xd7':'x', u'\xae': '',
@@ -53,11 +63,12 @@ REPLACEMENTS = {
     '\\u0302': '', '\\uf0b0': ''
 }
 
-parser = HTMLParser.HTMLParser()
+parser = HTMLParser()
+import html
 def prepro_txt(text):
     import urllib
 
-    text = parser.unescape(text)
+    text = html.unescape(text)
 
     for unichar, replacement in REPLACEMENTS.iteritems():
         text = text.replace(unichar, replacement)
@@ -85,8 +96,8 @@ def align(haystack, needle):
     hsz = len(haystack)
     nsz = len(needle)
     s = defaultdict(lambda: (0, 'v'))
-    for i in xrange(hsz-1, -1, -1):
-        for j in xrange(min(nsz, i+1)-1, max(0, i-hsz+nsz)-1, -1):
+    for i in range(hsz-1, -1, -1):
+        for j in range(min(nsz, i+1)-1, max(0, i-hsz+nsz)-1, -1):
             opts = [(s[(i+1, j)][0]-1 if i < hsz-nsz+j else float('-inf'), 'v')]
             if haystack[i] == needle[j]:
                 opts.append((s[(i+1, j+1)][0]+1, 'd'))
@@ -94,7 +105,7 @@ def align(haystack, needle):
 
     alignment = np.zeros(hsz, dtype='uint8')
     parent = (0, 0)
-    for i in xrange(hsz):
+    for i in range(hsz):
         p = s[parent][1]
         alignment[i] = p == 'd'
         parent = (parent[0]+1, parent[1]+(p == 'd'))

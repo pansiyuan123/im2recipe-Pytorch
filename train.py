@@ -11,19 +11,33 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
 import torch.backends.cudnn as cudnn
-from data_loader import ImagerLoader 
+from data_loader import ImagerLoader
 from args import get_parser
 from trijoint import im2recipe
+from multiprocessing import freeze_support,set_start_method
+from torch import tensor
+from tqdm import tqdm
+from tensorboardX import SummaryWriter
+import torchvision.models as models
+import json
 
+import pickle
 # =============================================================================
 parser = get_parser()
 opts = parser.parse_args()
 # =============================================================================
 
+writer = SummaryWriter('log')
+global train_step,val_step
+train_step = 0
+val_step = 9
+from PIL import Image
+
+
 def main():
 
     model = im2recipe()
-    model.visionMLP = torch.nn.DataParallel(model.visionMLP, device_ids=[0,1,2,3])
+    model.visionMLP = torch.nn.DataParallel(model.visionMLP)
     # model.visionMLP = torch.nn.DataParallel(model.visionMLP, device_ids=[0,1])
     model.cuda()
 
@@ -38,18 +52,19 @@ def main():
         class_crit = nn.CrossEntropyLoss(weight=weights_class).cuda()
         # we will use two different criteria
         criterion = [cosine_crit, class_crit]
+
     else:
         criterion = cosine_crit
 
     # # creating different parameter groups
     vision_params = list(map(id, model.visionMLP.parameters()))
-    base_params   = filter(lambda p: id(p) not in vision_params, model.parameters())
-   
+    base_params = filter(lambda p: id(p) not in vision_params, model.parameters())
+
     # optimizer - with lr initialized accordingly
     optimizer = torch.optim.Adam([
-                {'params': base_params},
-                {'params': model.visionMLP.parameters(), 'lr': opts.lr*opts.freeVision }
-            ], lr=opts.lr*opts.freeRecipe)
+        {'params': base_params},
+        {'params': model.visionMLP.parameters(), 'lr': opts.lr * opts.freeVision}
+    ], lr=opts.lr * opts.freeRecipe)
 
     if opts.resume:
         if os.path.isfile(opts.resume):
@@ -63,50 +78,50 @@ def main():
                   .format(opts.resume, checkpoint['epoch']))
         else:
             print("=> no checkpoint found at '{}'".format(opts.resume))
-            best_val = float('inf') 
+            best_val = float('inf')
     else:
-        best_val = float('inf') 
+        best_val = float('inf')
 
-    # models are save only when their loss obtains the best value in the validation
+        # models are save only when their loss obtains the best value in the validation
     valtrack = 0
 
-    print 'There are %d parameter groups' % len(optimizer.param_groups)
-    print 'Initial base params lr: %f' % optimizer.param_groups[0]['lr']
-    print 'Initial vision params lr: %f' % optimizer.param_groups[1]['lr']
+    print ('There are %d parameter groups' % len(optimizer.param_groups))
+    print ('Initial base params lr: %f' % optimizer.param_groups[0]['lr'])
+    print ('Initial vision params lr: %f' % optimizer.param_groups[1]['lr'])
 
-    # data preparation, loaders
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
-    
+
     cudnn.benchmark = True
 
     # preparing the training laoder
     train_loader = torch.utils.data.DataLoader(
         ImagerLoader(opts.img_path,
-            transforms.Compose([
-            transforms.Scale(256), # rescale the image keeping the original aspect ratio
-            transforms.CenterCrop(256), # we get only the center of that rescaled
-            transforms.RandomCrop(224), # random crop within the center crop 
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            normalize,
-        ]),data_path=opts.data_path,partition='train',sem_reg=opts.semantic_reg),
+                     transforms.Compose([
+                         transforms.Resize(256),  # rescale the image keeping the original aspect ratio
+                         transforms.CenterCrop(256),  # we get only the center of that rescaled
+                         transforms.RandomCrop(224),  # random crop within the center crop
+                         transforms.RandomHorizontalFlip(),
+                         transforms.ToTensor(),
+                         normalize,
+                     ]), data_path=opts.data_path, partition='train', sem_reg=opts.semantic_reg),
         batch_size=opts.batch_size, shuffle=True,
         num_workers=opts.workers, pin_memory=True)
-    print 'Training loader prepared.'
 
-    # preparing validation loader 
+    print ("TRAINingLOADER completed")
+
+    # preparing validation loader
     val_loader = torch.utils.data.DataLoader(
         ImagerLoader(opts.img_path,
-            transforms.Compose([
-            transforms.Scale(256), # rescale the image keeping the original aspect ratio
-            transforms.CenterCrop(224), # we get only the center of that rescaled
-            transforms.ToTensor(),
-            normalize,
-        ]),data_path=opts.data_path,sem_reg=opts.semantic_reg,partition='val'),
+                     transforms.Compose([
+                         transforms.Resize(256),  # rescale the image keeping the original aspect ratio
+                         transforms.CenterCrop(224),  # we get only the center of that rescaled
+                         transforms.ToTensor(),
+                         normalize,
+                     ]), data_path=opts.data_path, sem_reg=opts.semantic_reg, partition='val'),
         batch_size=opts.batch_size, shuffle=False,
         num_workers=opts.workers, pin_memory=True)
-    print 'Validation loader prepared.'
+    print ('Validation loader prepared.')
 
     # run epochs
     for epoch in range(opts.start_epoch, opts.epochs):
@@ -115,9 +130,9 @@ def main():
         train(train_loader, model, criterion, optimizer, epoch)
 
         # evaluate on validation set
-        if (epoch+1) % opts.valfreq == 0 and epoch != 0:
+        if (epoch + 1) % opts.valfreq == 0 and epoch != 0:
             val_loss = validate(val_loader, model, criterion)
-        
+
             # check patience
             if val_loss >= best_val:
                 valtrack += 1
@@ -125,9 +140,10 @@ def main():
                 valtrack = 0
             if valtrack >= opts.patience:
                 # we switch modalities
-                opts.freeVision = opts.freeRecipe; opts.freeRecipe = not(opts.freeVision)
+                opts.freeVision = opts.freeRecipe
+                opts.freeRecipe = not (opts.freeVision)
                 # change the learning rate accordingly
-                adjust_learning_rate(optimizer, epoch, opts) 
+                adjust_learning_rate(optimizer, epoch, opts)
                 valtrack = 0
 
             # save the best model
@@ -143,7 +159,8 @@ def main():
                 'curr_val': val_loss,
             }, is_best)
 
-            print '** Validation: %f (best) - %d (valtrack)' % (best_val, valtrack)
+            print ('** Validation: %f (best) - %d (valtrack)' % (best_val, valtrack))
+
 
 def train(train_loader, model, criterion, optimizer, epoch):
     batch_time = AverageMeter()
@@ -157,43 +174,53 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
     # switch to train mode
     model.train()
-
+    #print ({"cao_losses":cos_losses.val, "img_losses":img_losses.val, "rec_losses":rec_losses.val})
     end = time.time()
-    for i, (input, target) in enumerate(train_loader):
+    global train_step
+    for i, (input, target) in tqdm(enumerate(train_loader)):
+        if opts.semantic_reg:
+            writer.add_scalars('train_loss',{"cao_losses":cos_losses.val, "img_losses":img_losses.val, "rec_losses":rec_losses.val},train_step)
+        else:
+            writer.add_scalar("train_loss",cos_losses.val,train_step)
+        print ("wocaonima %s" %str(i))
 
         # measure data loading time
         data_time.update(time.time() - end)
 
-        input_var = list() 
+        input_var = list()
         for j in range(len(input)):
             input_var.append(torch.autograd.Variable(input[j]).cuda())
 
         target_var = list()
         for j in range(len(target)):
-            target[j] = target[j].cuda(async=True)
+            target[j] = target[j].cuda(non_blocking=True)
             target_var.append(torch.autograd.Variable(target[j]))
+        #正负样本,imgclass,recipeclass
 
         # compute output
         output = model(input_var[0], input_var[1], input_var[2], input_var[3], input_var[4])
-
+        #visual_emb, recipe_emb, visual_sem, recipe_sem
         # compute loss
         if opts.semantic_reg:
-            cos_loss = criterion[0](output[0], output[1], target_var[0])
+            #print (type(output[0]),type(output[1]),type(target_var[0].float()))
+            cos_loss = criterion[0](output[0], output[1], target_var[0].float())
             img_loss = criterion[1](output[2], target_var[1])
             rec_loss = criterion[1](output[3], target_var[2])
             # combined loss
             loss =  opts.cos_weight * cos_loss +\
                     opts.cls_weight * img_loss +\
-                    opts.cls_weight * rec_loss 
+                    opts.cls_weight * rec_loss
 
             # measure performance and record losses
-            cos_losses.update(cos_loss.data[0], input[0].size(0))
-            img_losses.update(img_loss.data[0], input[0].size(0))
-            rec_losses.update(rec_loss.data[0], input[0].size(0))
+            cos_losses.update(torch.Tensor.item(cos_loss), input[0].size(0))
+            img_losses.update(torch.Tensor.item(img_loss), input[0].size(0))
+            rec_losses.update(torch.Tensor.item(rec_loss), input[0].size(0))
         else:
             loss = criterion(output[0], output[1], target_var[0])
             # measure performance and record loss
             cos_losses.update(loss.data[0], input[0].size(0))
+
+        train_step+=1
 
         # compute gradient and do Adam step
         optimizer.zero_grad()
@@ -213,12 +240,15 @@ def train(train_loader, model, criterion, optimizer, epoch):
                    epoch, cos_loss=cos_losses, img_loss=img_losses,
                    rec_loss=rec_losses, visionLR=optimizer.param_groups[1]['lr'],
                    recipeLR=optimizer.param_groups[0]['lr']))
+        #return epoch, cos_losses.val, img_losses.val, rec_losses.val
     else:
          print('Epoch: {0}\t'
                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                   'vision ({visionLR}) - recipe ({recipeLR})\t'.format(
                    epoch, loss=cos_losses, visionLR=optimizer.param_groups[1]['lr'],
-                   recipeLR=optimizer.param_groups[0]['lr']))                 
+                   recipeLR=optimizer.param_groups[0]['lr']))
+         #return epoch,cos_losses.val
+
 
 def validate(val_loader, model, criterion):
     batch_time = AverageMeter()
@@ -232,39 +262,42 @@ def validate(val_loader, model, criterion):
 
     end = time.time()
     for i, (input, target) in enumerate(val_loader):
-        input_var = list() 
+        input_var = list()
         for j in range(len(input)):
             input_var.append(torch.autograd.Variable(input[j], volatile=True).cuda())
         target_var = list()
-        for j in range(len(target)-2): # we do not consider the last two objects of the list
-            target[j] = target[j].cuda(async=True)
+        for j in range(len(target) - 2):  # we do not consider the last two objects of the list
+            target[j] = target[j].cuda(non_blocking=True)
             target_var.append(torch.autograd.Variable(target[j], volatile=True))
 
         # compute output
-        output = model(input_var[0],input_var[1], input_var[2], input_var[3], input_var[4])
-        
-        if i==0:
+        output = model(input_var[0], input_var[1], input_var[2], input_var[3], input_var[4])
+
+        if i == 0:
             data0 = output[0].data.cpu().numpy()
             data1 = output[1].data.cpu().numpy()
             data2 = target[-2]
             data3 = target[-1]
         else:
-            data0 = np.concatenate((data0,output[0].data.cpu().numpy()),axis=0)
-            data1 = np.concatenate((data1,output[1].data.cpu().numpy()),axis=0)
-            data2 = np.concatenate((data2,target[-2]),axis=0)
-            data3 = np.concatenate((data3,target[-1]),axis=0)
+            data0 = np.concatenate((data0, output[0].data.cpu().numpy()), axis=0)
+            data1 = np.concatenate((data1, output[1].data.cpu().numpy()), axis=0)
+            data2 = np.concatenate((data2, target[-2]), axis=0)
+            data3 = np.concatenate((data3, target[-1]), axis=0)
 
     medR, recall = rank(opts, data0, data1, data2)
     print('* Val medR {medR:.4f}\t'
           'Recall {recall}'.format(medR=medR, recall=recall))
+    global val_step
+    writer.add_scalars('val_result', {"medR":medR,"recall":recall}, val_step)
+    val_step+=1
 
-    return medR 
+    return medR
 
 def rank(opts, img_embeds, rec_embeds, rec_ids):
     random.seed(opts.seed)
-    type_embedding = opts.embtype 
-    im_vecs = img_embeds 
-    instr_vecs = rec_embeds 
+    type_embedding = opts.embtype
+    im_vecs = img_embeds
+    instr_vecs = rec_embeds
     names = rec_ids
 
     # Sort based on names to always pick same samples for medr
@@ -279,7 +312,7 @@ def rank(opts, img_embeds, rec_embeds, rec_ids):
     glob_recall = {1:0.0,5:0.0,10:0.0}
     for i in range(10):
 
-        ids = random.sample(xrange(0,len(names)), N)
+        ids = random.sample(range(0,len(names)), N)
         im_sub = im_vecs[ids,:]
         instr_sub = instr_vecs[ids,:]
         ids_sub = names[ids]
@@ -334,7 +367,7 @@ def rank(opts, img_embeds, rec_embeds, rec_ids):
 
 def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
 
-    filename = opts.snapshots + 'model_e%03d_v-%.3f.pth.tar' % (state['epoch'],state['best_val']) 
+    filename = opts.snapshots + 'model_e%03d_v-%.3f.pth.tar' % (state['epoch'],state['best_val'])
     if is_best:
         torch.save(state, filename)
 
@@ -359,14 +392,16 @@ def adjust_learning_rate(optimizer, epoch, opts):
     """Switching between modalities"""
     # parameters corresponding to the rest of the network
     optimizer.param_groups[0]['lr'] = opts.lr * opts.freeRecipe
-    # parameters corresponding to visionMLP 
-    optimizer.param_groups[1]['lr'] = opts.lr * opts.freeVision 
+    # parameters corresponding to visionMLP
+    optimizer.param_groups[1]['lr'] = opts.lr * opts.freeVision
 
-    print 'Initial base params lr: %f' % optimizer.param_groups[0]['lr']
-    print 'Initial vision lr: %f' % optimizer.param_groups[1]['lr']
+    print ('Initial base params lr: %f' % optimizer.param_groups[0]['lr'])
+    print ('Initial vision lr: %f' % optimizer.param_groups[1]['lr'])
 
     # after first modality change we set patience to 3
     opts.patience = 3
 
 if __name__ == '__main__':
+    #freeze_support()
+    #set_start_method('spawn')
     main()

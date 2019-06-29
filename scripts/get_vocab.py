@@ -9,7 +9,7 @@ model = word2vec.load(w2v_file)
 
 vocab =  model.vocab
 
-print "Writing to files/vocab.txt..."
+print ("Writing to files/vocab.txt...")
 f = open('files/vocab.txt','w')
 f.write("\n".join(vocab))
 f.close()

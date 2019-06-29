@@ -2,22 +2,19 @@ import os
 import random
 import numpy as np
 import utils
-import torchfile
 import pickle
 import sys
 sys.path.append("..")
 from args import get_parser
 
-# =============================================================================
 parser = get_parser()
 opts = parser.parse_args()
-# =============================================================================
 
 random.seed(opts.seed)
-type_embedding = opts.embtype 
-# 'image'
-# type_embedding = 'recipe'
-print opts.path_results
+type_embedding = opts.embtype
+
+print (opts.path_result)
+
 with open(os.path.join(opts.path_results,'img_embeds.pkl'),'rb') as f:
     im_vecs = pickle.load(f)
 with open(os.path.join(opts.path_results,'rec_embeds.pkl'),'rb') as f:
@@ -37,7 +34,7 @@ glob_rank = []
 glob_recall = {1:0.0,5:0.0,10:0.0}
 for i in range(10):
 
-    ids = random.sample(xrange(0,len(names)), N)
+    ids = random.sample(range(0,len(names)), N)
     im_sub = im_vecs[ids,:]
     instr_sub = instr_vecs[ids,:]
     ids_sub = names[ids]
@@ -77,7 +74,7 @@ for i in range(10):
         recall[i]=recall[i]/N
 
     med = np.median(med_rank)
-    print "median", med
+    print ("median", med)
 
     for i in recall.keys():
         glob_recall[i]+=recall[i]
@@ -85,5 +82,5 @@ for i in range(10):
 
 for i in glob_recall.keys():
     glob_recall[i] = glob_recall[i]/10
-print "Mean median", np.average(glob_rank)
-print "Recall", glob_recall
+print ("Mean median", np.average(glob_rank))
+print ("Recall", glob_recall)

@@ -37,6 +37,7 @@ def get_st(file):
     print(np.shape(st_vecs['encs']),len(st_vecs['rlens']),len(st_vecs['rbps']),len(st_vecs['ids']))
     return st_vecs
 
+
 # =============================================================================
 parser = get_parser()
 opts = parser.parse_args()
@@ -105,7 +106,7 @@ for i,entry in tqdm(enumerate(dataset)):
         continue
 
     ingr_vec = np.zeros((opts.maxlen), dtype='uint16')
-    ingr_vec[:ningrs] = ingr_detections 
+    ingr_vec[:ningrs] = ingr_detections
 
     partition = entry['partition']
 
@@ -114,11 +115,11 @@ for i,entry in tqdm(enumerate(dataset)):
     end = beg + st_vecs[partition]['rlens'][stpos]
 
     serialized_sample = pickle.dumps( {'ingrs':ingr_vec, 'intrs':st_vecs[partition]['encs'][beg:end],
-        'classes':class_dict[entry['id']]+1, 'imgs':imgs[:maxNumImgs]} ) 
+        'classes':class_dict[entry['id']]+1, 'imgs':imgs[:maxNumImgs]} )
 
     with env[partition].begin(write=True) as txn:
         txn.put('{}'.format(entry['id']), serialized_sample)
-    # keys to be saved in a pickle file    
+    # keys to be saved in a pickle file
     keys[partition].append(entry['id'])
 
 for k in keys.keys():
@@ -126,4 +127,3 @@ for k in keys.keys():
         pickle.dump(keys[k],f)
 
 print('Training samples: %d - Validation samples: %d - Testing samples: %d' % (len(keys['train']),len(keys['val']),len(keys['test'])))
-

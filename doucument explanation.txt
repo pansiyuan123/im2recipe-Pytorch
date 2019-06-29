@@ -1,0 +1,158 @@
+Recipe 1M的数据说明：
+1、det_ingrs.json 对于一个菜谱的id输出食材以及哪些食材是有用的
+{
+"valid": 
+[true, true, true, true, true, true, true, true, true, true], 
+"id": "0000631d90",
+"ingredients": 
+[
+{"text": "shredded coconut"}, 
+{"text": "lean ground beef"}, 
+{"text": "fresh garlic"}, 
+{"text": "salt and black pepper"}, 
+{"text": "lemon juice"}, 
+{"text": "soy sauce"}, 
+{"text": "cornstarch"}, 
+{"text": "pineapple chunks"}, 
+{"text": "mandarin oranges"}, 
+{"text": "cashew nuts"}
+]
+}
+
+2、layer1.json
+{
+"ingredients": 
+[
+{"text": "6 ounces penne"}, 
+{"text": "2 cups Beechers Flagship Cheese Sauce (recipe follows)"}, 
+{"text": "1 ounce Cheddar, grated (1/4 cup)"}, 
+{"text": "1 ounce Gruyere cheese, grated (1/4 cup)"}, 
+{"text": "1/4 to 1/2 teaspoon chipotle chili powder (see Note)"}, 
+{"text": "1/4 cup (1/2 stick) unsalted butter"}, 
+{"text": "1/3 cup all-purpose flour"}, 
+{"text": "3 cups milk"}, 
+{"text": "14 ounces semihard cheese (page 23), 
+grated (about 3 1/2 cups)"}, 
+{"text": "2 ounces semisoft cheese (page 23), grated (1/2 cup)"}, 
+{"text": "1/2 teaspoon kosher salt"}, 
+{"text": "1/4 to 1/2 teaspoon chipotle chili powder"},
+{"text": "1/8 teaspoon garlic powder"}, 
+{"text": "(makes about 4 cups)"}
+], 
+"url": "http://www.epicurious.com/recipes/food/views/-world-s-best-mac-and-cheese-387747", 
+"partition": "train", 
+"title": "Worlds Best Mac and Cheese", 
+"id": "000018c8a5", 
+"instructions": 
+[
+{"text": 
+"Preheat the oven to 350 F. Butter or oil an 8-inch baking dish."}, 
+{"text": "Cook the penne 2 minutes less than package directions."}, 
+{"text": "(It will finish cooking in the oven.)"}, 
+{"text": "Rinse the pasta in cold water and set aside."}, 
+{"text": "Combine the cooked pasta and the sauce in a medium bowl and mix carefully but thoroughly."}, 
+{"text": "Scrape the pasta into the prepared baking dish."}, 
+{"text": "Sprinkle the top with the cheeses and then the chili powder."}, 
+{"text": "Bake, uncovered, for 20 minutes."}, 
+{"text": "Let the mac and cheese sit for 5 minutes before serving."}, 
+{"text": "Melt the butter in a heavy-bottomed saucepan over medium heat and whisk in the flour."}, 
+{"text": "Continue whisking and cooking for 2 minutes."}, 
+{"text": "Slowly add the milk, whisking constantly."}, 
+{"text": "Cook until the sauce thickens, about 10 minutes, stirring frequently."}, 
+{"text": "Remove from the heat."}, 
+{"text": "Add the cheeses, salt, chili powder, and garlic powder."}, 
+{"text": "Stir until the cheese is melted and all ingredients are incorporated, about 3 minutes."}, 
+{"text": "Use immediately, or refrigerate for up to 3 days."}, 
+{"text": "This sauce reheats nicely on the stove in a saucepan over low heat."}, 
+{"text": "Stir frequently so the sauce doesnt scorch."}, 
+{"text": "This recipe can be assembled before baking and frozen for up to 3 monthsjust be sure to use a freezer-to-oven pan and increase the baking time to 50 minutes."}, 
+{"text": "One-half teaspoon of chipotle chili powder makes a spicy mac, so make sure your family and friends can handle it!"}, 
+{"text": "The proportion of pasta to cheese sauce is crucial to the success of the dish."}, 
+{"text": "It will look like a lot of sauce for the pasta, but some of the liquid will be absorbed."}
+]
+},
+
+3、layer2.json
+{
+"id":"01b32004fb",
+"images":
+[
+{"id":"1ab301aec3.jpg","url":"https:\/\/img-global.cpcdn.com\/001_recipes\/47930197\/0x0\/photo.jpg"},
+{"id":"42c5f0770c.jpg","url":"https:\/\/img-global.cpcdn.com\/001_photo_reports\/5291695499378688\/0x0\/photo.jpg"}
+]
+},
+
+4、layer_merge的结果
+{
+     'ingredients':
+         [
+         {'text': 'creamy peanut butter'}, 
+         {'text': 'Crisco shortening'}, 
+         {'text': 'light brown sugar'}, 
+         {'text': 'milk'}, 
+         {'text': 'vanilla'}, 
+         {'text': 'egg'}, 
+         {'text': 'flour'}, 
+         {'text': 'salt'}, 
+         {'text': 'baking soda'}
+         ], 
+     'url': 'http://www.food.com/recipe/irresistible-peanut-butter-cookies-210312', 
+     'partition': 'val', 
+     'title': 'Irresistible Peanut Butter Cookies', 
+     'id': '0006354bc3', 
+     'instructions': 
+         [
+         {'text': 'Combine peanut butter, Crisco, brown sugar, milk, and vanilla in a large bowl.'}, 
+         {'text': 'Beat at medium speed until well blended.'}, 
+         {'text': 'Add egg and beat just until blended.'}, 
+         {'text': 'Mix in the flour, salt, and baking soda at low speed and mix just till blended.'}, 
+         {'text': 'Drop by heaping teaspoonfuls about 2" apart onto an ungreased sheet.'}, 
+         {'text': 'Flatten slightly in crisscross pattern with tines of a floured fork.'}, 
+         {'text': 'Bake at 375 degrees for 7-8 minutes or until set and just beginning to brown.'}, 
+         {'text': 'Cool for 2 minutes on the sheet before removing.'}
+         ], 
+     'images': 
+         [
+         {
+         'id': '7027a5c4f9.jpg', 
+         'url': 'http://img.sndimg.com/food/image/upload/w_512,h_512,c_fit,fl_progressive,q_95/v1/img/recipes/21/03/12/pics2duVm.jpg'
+         }, 
+         {'id': 'fff3e1751a.jpg', 
+         'url': 'http://img.sndimg.com/food/image/upload/w_512,h_512,c_fit,fl_progressive,q_95/v1/img/recipes/21/03/12/picrPS1es.jpg'
+         }
+         ], 
+     'valid': [True, True, True, True, True, True, True, True, True]
+}
+
+4、titles1m.txt将layer_merge中的title存下来
+Sweet Biscuit Wreath Midnight Mashed Potatoes Tropical Banana
+
+5、bigrams1m.pkl 从4中选择两个单词一个tuple，后面是出现的词频
+(“fuck1”，“fuck2”) 206
+
+6、tokenized_instructions_train.txt 将ingredients中valid有用的附在他的instructions中
+Preheat the oven to 350 F .  Butter or oil an 8-inch baking dish . 	Cook the penne 2 minutes less than package directions . 	 ( It will finish cooking in the oven .  ) 	Rinse the pasta in cold water and set aside . 	Combine the cooked pasta and the sauce in a medium bowl and mix carefully but thoroughly . 	Scrape the pasta into the prepared baking dish . 	Sprinkle the top with the cheeses and then the chili powder . 	Bake ,  uncovered ,  for 20 minutes . 	Let the mac and cheese sit for 5 minutes before serving . 	Melt the butter in a heavy-bottomed saucepan over medium heat and whisk in the flour . 	Continue whisking and cooking for 2 minutes . 	Slowly add the milk ,  whisking constantly . 	Cook until the sauce thickens ,  about 10 minutes ,  stirring frequently . 	Remove from the heat . 	Add the cheeses ,  salt ,  chili powder ,  and garlic_powder . 	Stir until the cheese is melted and all ingredients are incorporated ,  about 3 minutes . 	Use immediately ,  or refrigerate for up to 3 days . 	This sauce reheats nicely on the stove in a saucepan over low heat . 	Stir frequently so the sauce doesnt scorch . 	This recipe can be assembled before baking and frozen for up to 3 monthsjust be sure to use a freezer-to-oven pan and increase the baking time to 50 minutes . 	One-half teaspoon of chipotle chili powder makes a spicy mac ,  so make sure your family and friends can handle it ! 	The proportion of pasta to cheese_sauce is crucial to the success of the dish . 	It will look like a lot of sauce for the pasta ,  but some of the liquid will be absorbed . 	
+Cook macaroni according to package directions ;  drain well . 	Cold . 	Combine macaroni ,  cheese cubes ,  celery ,  green pepper and pimento . 	Blend together mayonnaise or possibly salad dressing ,  vinegar ,  salt and dill weed ;  add in to macaroni mix . 	Toss lightly . 	Cover and refrigeratewell . 	Serve salad in lettuce lined bowl if you like . 	Makes 6 servings . 	
+Add the tomatoes to a food processor with a pinch of salt and puree until smooth . 	Combine the onions ,  bell peppers and cucumbers with the tomato puree in a large bowl . 	Chill at least 1 hour . 	Drizzle with olive_oil ,  garnish with chopped basil and serve . 	
+Dissolve Jello in boiling_water . 	Allow to cool to room temp . 	Whisk in Cool_Whip . 	Fold in watermelon . 	Spoon into crust . 	Chill for 2-3 hours or overnight . 	Yum ! 	
+In a large skillet ,  toast the coconut over medium heat ,  until golden and crisp ;  set aside . 	Brown ground beef and garlic in the same skillet ;  drain well . 	Add salt ,  pepper lemon_juice and soy_sauce . 	In a small bowl combine the cornstarch with reserved pineapple and mandarin orange liquids ;  stir well until smooth then add to ground beef and cook over medium heat for 5 mins ,  stirring constantly ,  until mixture is thickened . 	Stir in the pineapple and mandarin_oranges ;  cook 2-3 mins ,  or until thoroughly heated . 	Serve over noodles or rice ,  and sprinkle with more toasted coconut and cashew_nuts . 	
+Pierce the skin of the chicken with a fork or knife . 	Sprinkle with kombu tea evenly on both sides of the chicken ,  about 1 teaspoon per chicken thigh . 	Brown the skin side of the chicken first over high heat until golden brown . 	Sprinkle some pepper on the meat just before flipping over . 	Then brown the other side until golden brown . 	
+Put ingredients in a buttered 9 x 12 x 2-inch pan in even layers in the order that they are given - DO NOT MIX . 	Bake in a 350 oven for 1 hour . 	
+Layer all ingredients in a serving dish . 
+
+7、vocab.txt 所有instructions里面的单词
+stand
+plastic
+least
+two
+crust
+
+8、class1m.pkl 
+由两部分组成，classdict和ind2class
+classdict是一个dict，里面是每一个菜谱的id对应到第几类（从1开始标号的）
+ind2class是一个类对应到的菜谱的名字
+
+9、train_keys.pkl 和 train_lmdb
+每一个pkl里面是一个list，存储的是每一个数据的id
+lmdb中是一个dict，key是（菜谱的id，value是编码完的instruction，ingredients，属于哪一类（即标签），图片的地址）一共四类构成
+

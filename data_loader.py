@@ -7,6 +7,7 @@ import pickle
 import numpy as np
 import lmdb
 import torch
+from tqdm import tqdm
 
 
 def default_loader(path):
@@ -51,6 +52,7 @@ class ImagerLoader(data.Dataset):
         self.loader = loader
 
     def __getitem__(self, index):
+        #print ("xianlaiyibofuck")
         recipId = self.ids[index]
         # we force 80 percent of them to be a mismatch
         if self.partition == 'train':
@@ -58,16 +60,17 @@ class ImagerLoader(data.Dataset):
         elif self.partition == 'val' or self.partition == 'test':
             match = True
         else:
-            raise 'Partition name not well defined'
+            raise ("Partition name not well defined")
 
         target = match and 1 or -1
 
         with self.env.begin(write=False) as txn:
-            serialized_sample = txn.get(self.ids[index])
-        sample = pickle.loads(serialized_sample)
-        imgs = sample['imgs']
-
+            serialized_sample = txn.get(self.ids[index].encode())
+        sample = pickle.loads(serialized_sample,encoding="bytes")
+        imgs = sample['imgs'.encode()]
+        #print (imgs)
         # image
+        #print ("caonima")
         if target == 1:
             if self.partition == 'train':
                 # We do only use the first five images per recipe during training
@@ -75,9 +78,13 @@ class ImagerLoader(data.Dataset):
             else:
                 imgIdx = 0
 
-            loader_path = [imgs[imgIdx]['id'][i] for i in range(4)]
+
+            loader_path = [imgs[imgIdx]['id'.encode()].decode()[i] for i in range(4)]
+            #print (loader_path)
             loader_path = os.path.join(*loader_path)
-            path = os.path.join(self.imgPath, self.partition, loader_path, imgs[imgIdx]['id'])
+            #print (loader_path)
+            path = os.path.join(self.imgPath, 'recipe1M_images_'+self.partition, self.partition, loader_path, imgs[imgIdx]['id'.encode()].decode())
+
         else:
             # we randomly pick one non-matching image
             all_idx = range(len(self.ids))
@@ -86,10 +93,10 @@ class ImagerLoader(data.Dataset):
                 rndindex = np.random.choice(all_idx)  # pick a random index
 
             with self.env.begin(write=False) as txn:
-                serialized_sample = txn.get(self.ids[rndindex])
+                serialized_sample = txn.get(self.ids[rndindex].encode())
 
-            rndsample = pickle.loads(serialized_sample)
-            rndimgs = rndsample['imgs']
+            rndsample = pickle.loads(serialized_sample,encoding="bytes")
+            rndimgs = rndsample['imgs'.encode()]
 
             if self.partition == 'train':  # if training we pick a random image
                 # We do only use the first five images per recipe during training
@@ -97,22 +104,30 @@ class ImagerLoader(data.Dataset):
             else:
                 imgIdx = 0
 
-            path = self.imgPath + rndimgs[imgIdx]['id']
+            loader_path = [rndimgs[imgIdx]['id'.encode()].decode()[i] for i in range(4)]
+            # print (loader_path)
+            loader_path = os.path.join(*loader_path)
+            # print (loader_path)
+            path = os.path.join(self.imgPath,'recipe1M_images_'+self.partition, self.partition, loader_path, rndimgs[imgIdx]['id'.encode()].decode())
 
             # instructions
-        instrs = sample['intrs']
+        #print ("rilegou")
+
+        instrs = sample['intrs'.encode()]
         itr_ln = len(instrs)
         t_inst = np.zeros((self.maxInst, np.shape(instrs)[1]), dtype=np.float32)
         t_inst[:itr_ln][:] = instrs
         instrs = torch.FloatTensor(t_inst)
 
         # ingredients
-        ingrs = sample['ingrs'].astype(int)
+        ingrs = sample['ingrs'.encode()].astype(int)
         ingrs = torch.LongTensor(ingrs)
-        igr_ln = max(np.nonzero(sample['ingrs'])[0]) + 1
-
+        igr_ln = max(np.nonzero(sample['ingrs'.encode()])[0]) + 1
+        #print ("malegebi")
         # load image
+
         img = self.loader(path)
+        #print (img)
 
         if self.square:
             img = img.resize(self.square)
@@ -121,16 +136,17 @@ class ImagerLoader(data.Dataset):
         if self.target_transform is not None:
             target = self.target_transform(target)
 
-        rec_class = sample['classes'] - 1
+        rec_class = sample['classes'.encode()] - 1
         rec_id = self.ids[index]
 
         if target == -1:
-            img_class = rndsample['classes'] - 1
+            img_class = rndsample['classes'.encode()] - 1
             img_id = self.ids[rndindex]
         else:
-            img_class = sample['classes'] - 1
+            img_class = sample['classes'.encode()] - 1
             img_id = self.ids[index]
 
+        #print (img)
         # output
         if self.partition == 'train':
             if self.semantic_reg:
